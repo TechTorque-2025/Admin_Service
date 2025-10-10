@@ -1,6 +1,8 @@
 
 # 📊 Admin & Reporting Service
 
+[![Build and Test Admin Service](https://github.com/TechTorque-2025/Admin_Service/actions/workflows/buildtest.yaml/badge.svg)](https://github.com/TechTorque-2025/Admin_Service/actions/workflows/buildtest.yaml)
+
 This microservice provides administrative oversight and business intelligence. It acts as an **orchestrator**, securely communicating with other services to aggregate data and perform admin actions.
 
 **Assigned Team:** Randitha, Suweka

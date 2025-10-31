@@ -40,11 +40,10 @@ public class ReportSchedule {
     @Enumerated(EnumType.STRING)
     private ScheduleFrequency frequency;
 
-    @Column(nullable = false)
     @ElementCollection
     @CollectionTable(name = "report_schedule_recipients",
-            joinColumns = @JoinColumn(name = "schedule_id"))
-    @Column(name = "email")
+        joinColumns = @JoinColumn(name = "schedule_id"))
+    @Column(name = "email", nullable = false)
     private List<String> recipients;
 
     private Integer dayOfSchedule; // For WEEKLY (1-7) or MONTHLY (1-31)
@@ -70,11 +69,3 @@ public class ReportSchedule {
     private LocalDateTime updatedAt;
 }
 
-/**
- * Enum for schedule frequency
- */
-public enum ScheduleFrequency {
-    DAILY,
-    WEEKLY,
-    MONTHLY
-}

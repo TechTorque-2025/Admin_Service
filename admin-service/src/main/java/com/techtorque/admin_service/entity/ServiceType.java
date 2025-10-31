@@ -2,7 +2,10 @@ package com.techtorque.admin_service.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "service_types")
@@ -10,6 +13,7 @@ import java.math.BigDecimal;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@EntityListeners(AuditingEntityListener.class)
 public class ServiceType {
   @Id
   @GeneratedValue(strategy = GenerationType.UUID)
@@ -24,7 +28,25 @@ public class ServiceType {
   private BigDecimal price;
 
   @Column(nullable = false)
-  private int defaultDurationMinutes;
+  private Integer durationMinutes;
 
   private String category;
+
+  @Builder.Default
+  private Boolean requiresApproval = false;
+
+  private Integer dailyCapacity;
+
+  private String skillLevel;
+
+  private String iconUrl;
+
+  @Builder.Default
+  private Boolean active = true;
+
+  @CreatedDate
+  @Column(nullable = false, updatable = false)
+  private LocalDateTime createdAt;
+
+  private LocalDateTime updatedAt;
 }

@@ -39,8 +39,9 @@ public class CreateServiceTypeRequest {
     @Max(value = 480, message = "Duration must not exceed 8 hours (480 minutes)")
     private Integer durationMinutes;
 
-    // Optional fields
-    private Boolean requiresApproval = false;
+        // Optional fields
+        @Builder.Default
+        private Boolean requiresApproval = false;
 
     @Min(value = 1, message = "Daily capacity must be at least 1")
     @Max(value = 50, message = "Daily capacity cannot exceed 50")

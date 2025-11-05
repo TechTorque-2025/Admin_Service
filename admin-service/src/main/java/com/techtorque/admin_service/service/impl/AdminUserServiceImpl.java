@@ -6,27 +6,23 @@ import com.techtorque.admin_service.dto.response.UserResponse;
 import com.techtorque.admin_service.service.AdminUserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.*;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
 /**
- * Implementation of AdminUserService using RestTemplate to call the auth-service.
+ * Implementation of AdminUserService using WebClient to call the auth-service.
  */
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class AdminUserServiceImpl implements AdminUserService {
 
-  @Value("${auth.service.url:http://localhost:8080}")
-  private String authServiceUrl;
-
-  private final RestTemplate restTemplate = new RestTemplate();
+  @Qualifier("authServiceWebClient")
+  private final WebClient authServiceWebClient;
 
   @Override
   public List<UserResponse> getAllUsers(String role, Boolean active, int page, int limit) {
@@ -34,22 +30,21 @@ public class AdminUserServiceImpl implements AdminUserService {
         role, active, page, limit);
 
     try {
-      String url = String.format("%s/auth/admin/users?page=%d&limit=%d", authServiceUrl, page, limit);
-      if (role != null) url += "&role=" + role;
-      if (active != null) url += "&active=" + active;
+      String path = "/users?page=" + page + "&limit=" + limit;
+      if (role != null) path += "&role=" + role;
+      if (active != null) path += "&active=" + active;
 
-      ResponseEntity<UserResponse[]> response = restTemplate.exchange(
-          url,
-          HttpMethod.GET,
-          createAuthHeaders(),
-          UserResponse[].class
-      );
+      List<UserResponse> users = authServiceWebClient.get()
+          .uri(path)
+          .retrieve()
+          .bodyToFlux(UserResponse.class)
+          .collectList()
+          .block();
 
-      if (response.getBody() != null) return Arrays.asList(response.getBody());
-      return Collections.emptyList();
+      return users != null ? users : Collections.emptyList();
     } catch (Exception e) {
       log.error("Error fetching users from auth service", e);
-      return Collections.emptyList();
+      throw new RuntimeException("Failed to fetch users: " + e.getMessage());
     }
   }
 
@@ -57,14 +52,16 @@ public class AdminUserServiceImpl implements AdminUserService {
   public UserResponse getUserById(String userId) {
     log.info("Fetching user: {} from auth service", userId);
     try {
-      String url = String.format("%s/auth/admin/users/%s", authServiceUrl, userId);
-      ResponseEntity<UserResponse> response = restTemplate.exchange(
-          url,
-          HttpMethod.GET,
-          createAuthHeaders(),
-          UserResponse.class
-      );
-      return response.getBody();
+      UserResponse user = authServiceWebClient.get()
+          .uri("/users/" + userId)
+          .retrieve()
+          .bodyToMono(UserResponse.class)
+          .block();
+
+      if (user == null) {
+        throw new RuntimeException("User not found: " + userId);
+      }
+      return user;
     } catch (Exception e) {
       log.error("Error fetching user: {}", userId, e);
       throw new RuntimeException("User not found: " + userId);
@@ -75,15 +72,14 @@ public class AdminUserServiceImpl implements AdminUserService {
   public UserResponse createEmployee(CreateEmployeeRequest request) {
     log.info("Creating employee: {} via auth service", request.getEmail());
     try {
-      String url = String.format("%s/auth/admin/create-employee", authServiceUrl);
-      HttpEntity<CreateEmployeeRequest> entity = new HttpEntity<>(request, createHeaders());
-      ResponseEntity<UserResponse> response = restTemplate.exchange(
-          url,
-          HttpMethod.POST,
-          entity,
-          UserResponse.class
-      );
-      return response.getBody();
+      UserResponse response = authServiceWebClient.post()
+          .uri("/users/employee")
+          .bodyValue(request)
+          .retrieve()
+          .bodyToMono(UserResponse.class)
+          .block();
+
+      return response;
     } catch (Exception e) {
       log.error("Error creating employee", e);
       throw new RuntimeException("Failed to create employee: " + e.getMessage());
@@ -94,15 +90,14 @@ public class AdminUserServiceImpl implements AdminUserService {
   public UserResponse createAdmin(CreateEmployeeRequest request) {
     log.info("Creating admin: {} via auth service", request.getEmail());
     try {
-      String url = String.format("%s/auth/admin/create-admin", authServiceUrl);
-      HttpEntity<CreateEmployeeRequest> entity = new HttpEntity<>(request, createHeaders());
-      ResponseEntity<UserResponse> response = restTemplate.exchange(
-          url,
-          HttpMethod.POST,
-          entity,
-          UserResponse.class
-      );
-      return response.getBody();
+      UserResponse response = authServiceWebClient.post()
+          .uri("/users/admin")
+          .bodyValue(request)
+          .retrieve()
+          .bodyToMono(UserResponse.class)
+          .block();
+
+      return response;
     } catch (Exception e) {
       log.error("Error creating admin", e);
       throw new RuntimeException("Failed to create admin: " + e.getMessage());
@@ -113,15 +108,14 @@ public class AdminUserServiceImpl implements AdminUserService {
   public UserResponse updateUser(String userId, UpdateUserRequest request) {
     log.info("Updating user: {} via auth service", userId);
     try {
-      String url = String.format("%s/auth/admin/users/%s", authServiceUrl, userId);
-      HttpEntity<UpdateUserRequest> entity = new HttpEntity<>(request, createHeaders());
-      ResponseEntity<UserResponse> response = restTemplate.exchange(
-          url,
-          HttpMethod.PUT,
-          entity,
-          UserResponse.class
-      );
-      return response.getBody();
+      UserResponse response = authServiceWebClient.put()
+          .uri("/users/" + userId)
+          .bodyValue(request)
+          .retrieve()
+          .bodyToMono(UserResponse.class)
+          .block();
+
+      return response;
     } catch (Exception e) {
       log.error("Error updating user: {}", userId, e);
       throw new RuntimeException("Failed to update user: " + e.getMessage());
@@ -132,8 +126,11 @@ public class AdminUserServiceImpl implements AdminUserService {
   public void deactivateUser(String userId) {
     log.info("Deactivating user: {} via auth service", userId);
     try {
-      String url = String.format("%s/auth/admin/users/%s/disable", authServiceUrl, userId);
-      restTemplate.exchange(url, HttpMethod.PUT, createAuthHeaders(), Void.class);
+      authServiceWebClient.post()
+          .uri("/users/" + userId + "/disable")
+          .retrieve()
+          .bodyToMono(Void.class)
+          .block();
     } catch (Exception e) {
       log.error("Error deactivating user: {}", userId, e);
       throw new RuntimeException("Failed to deactivate user: " + e.getMessage());
@@ -144,21 +141,14 @@ public class AdminUserServiceImpl implements AdminUserService {
   public void activateUser(String userId) {
     log.info("Activating user: {} via auth service", userId);
     try {
-      String url = String.format("%s/auth/admin/users/%s/enable", authServiceUrl, userId);
-      restTemplate.exchange(url, HttpMethod.PUT, createAuthHeaders(), Void.class);
+      authServiceWebClient.post()
+          .uri("/users/" + userId + "/enable")
+          .retrieve()
+          .bodyToMono(Void.class)
+          .block();
     } catch (Exception e) {
       log.error("Error activating user: {}", userId, e);
       throw new RuntimeException("Failed to activate user: " + e.getMessage());
     }
-  }
-
-  private org.springframework.http.HttpHeaders createHeaders() {
-    org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
-    headers.setContentType(MediaType.APPLICATION_JSON);
-    return headers;
-  }
-
-  private HttpEntity<Void> createAuthHeaders() {
-    return new HttpEntity<>(createHeaders());
   }
 }

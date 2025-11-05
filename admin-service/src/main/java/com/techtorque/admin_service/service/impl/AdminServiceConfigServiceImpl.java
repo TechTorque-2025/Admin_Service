@@ -38,7 +38,7 @@ public class AdminServiceConfigServiceImpl implements AdminServiceConfigService 
             .description(request.getDescription())
             .category(request.getCategory())
             .price(request.getPrice())
-            .durationMinutes(request.getDurationMinutes())
+            .defaultDurationMinutes(request.getDurationMinutes())
             .requiresApproval(request.getRequiresApproval())
             .dailyCapacity(request.getDailyCapacity())
             .skillLevel(request.getSkillLevel())
@@ -92,7 +92,7 @@ public class AdminServiceConfigServiceImpl implements AdminServiceConfigService 
       serviceType.setPrice(request.getPrice());
     }
     if (request.getDurationMinutes() != null) {
-      serviceType.setDurationMinutes(request.getDurationMinutes());
+      serviceType.setDefaultDurationMinutes(request.getDurationMinutes());
     }
     if (request.getActive() != null) {
       serviceType.setActive(request.getActive());
@@ -135,7 +135,7 @@ public class AdminServiceConfigServiceImpl implements AdminServiceConfigService 
             .description(serviceType.getDescription())
             .category(serviceType.getCategory())
             .price(serviceType.getPrice())
-            .durationMinutes(serviceType.getDurationMinutes())
+            .durationMinutes(serviceType.getDefaultDurationMinutes())
             .active(serviceType.getActive())
             .requiresApproval(serviceType.getRequiresApproval())
             .dailyCapacity(serviceType.getDailyCapacity())

@@ -7,11 +7,14 @@ import com.techtorque.admin_service.service.AdminUserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Implementation of AdminUserService using WebClient to call the auth-service.
@@ -30,12 +33,25 @@ public class AdminUserServiceImpl implements AdminUserService {
         role, active, page, limit);
 
     try {
+      // Extract current user info from security context
+      Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+      String username = authentication != null ? authentication.getName() : "system";
+      
+      // Extract roles and strip "ROLE_" prefix if present
+      String roles = authentication != null && authentication.getAuthorities() != null
+          ? authentication.getAuthorities().stream()
+              .map(auth -> auth.toString().replaceFirst("^ROLE_", ""))
+              .collect(Collectors.joining(","))
+          : "ADMIN";
+      
       String path = "/users?page=" + page + "&limit=" + limit;
       if (role != null) path += "&role=" + role;
       if (active != null) path += "&active=" + active;
 
       List<UserResponse> users = authServiceWebClient.get()
           .uri(path)
+          .header("X-User-Subject", username)
+          .header("X-User-Roles", roles)
           .retrieve()
           .bodyToFlux(UserResponse.class)
           .collectList()

@@ -1,6 +1,8 @@
 package com.techtorque.admin_service.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -27,8 +29,8 @@ public class ServiceType {
   @Column(nullable = false)
   private BigDecimal price;
 
-  @Column(nullable = false)
-  private Integer durationMinutes;
+  @Column(name = "default_duration_minutes", nullable = false)
+  private Integer defaultDurationMinutes;
 
   private String category;
 

@@ -51,4 +51,49 @@ public class AdminReportController {
     ReportResponseDto report = adminReportService.getReportDetails(reportId);
     return ResponseEntity.ok(ApiResponse.success("Report details retrieved successfully", report));
   }
+
+  @Operation(summary = "Generate revenue report for a date range")
+  @GetMapping("/revenue")
+  public ResponseEntity<ApiResponse> getRevenueReport(
+          @RequestParam String startDate,
+          @RequestParam String endDate) {
+
+    ReportRequestDto dto = new ReportRequestDto();
+    dto.setReportType("REVENUE");
+    dto.setStartDate(java.time.LocalDate.parse(startDate));
+    dto.setEndDate(java.time.LocalDate.parse(endDate));
+
+    ReportResponseDto report = adminReportService.generateReport(dto, "system");
+    return ResponseEntity.ok(ApiResponse.success("Revenue report generated", report));
+  }
+
+  @Operation(summary = "Generate services report for a date range")
+  @GetMapping("/services")
+  public ResponseEntity<ApiResponse> getServicesReport(
+          @RequestParam String startDate,
+          @RequestParam String endDate) {
+
+    ReportRequestDto dto = new ReportRequestDto();
+    dto.setReportType("SERVICES");
+    dto.setStartDate(java.time.LocalDate.parse(startDate));
+    dto.setEndDate(java.time.LocalDate.parse(endDate));
+
+    ReportResponseDto report = adminReportService.generateReport(dto, "system");
+    return ResponseEntity.ok(ApiResponse.success("Services report generated", report));
+  }
+
+  @Operation(summary = "Generate customer report for a date range")
+  @GetMapping("/customers")
+  public ResponseEntity<ApiResponse> getCustomersReport(
+          @RequestParam String startDate,
+          @RequestParam String endDate) {
+
+    ReportRequestDto dto = new ReportRequestDto();
+    dto.setReportType("CUSTOMERS");
+    dto.setStartDate(java.time.LocalDate.parse(startDate));
+    dto.setEndDate(java.time.LocalDate.parse(endDate));
+
+    ReportResponseDto report = adminReportService.generateReport(dto, "system");
+    return ResponseEntity.ok(ApiResponse.success("Customer report generated", report));
+  }
 }

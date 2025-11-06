@@ -1,7 +1,12 @@
 package com.techtorque.admin_service.controller;
 
+import com.techtorque.admin_service.dto.ApiResponse;
+import com.techtorque.admin_service.dto.UserUpdateDto;
+import com.techtorque.admin_service.service.AdminUserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -10,35 +15,38 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/admin/users")
 @Tag(name = "Admin: User Management", description = "Endpoints for administrators to manage user accounts.")
 @PreAuthorize("hasRole('ADMIN')")
+@RequiredArgsConstructor
 public class AdminUserController {
 
-  // private final WebClient.Builder webClientBuilder;
+  private final AdminUserService adminUserService;
 
   @Operation(summary = "List all users with filters and pagination")
   @GetMapping
-  public ResponseEntity<?> listAllUsers() {
-    // TODO: Make a secure GET request to the Authentication Service to fetch users.
-    return ResponseEntity.ok().build();
+  public ResponseEntity<ApiResponse> listAllUsers() {
+    Object users = adminUserService.listAllUsers();
+    return ResponseEntity.ok(ApiResponse.success("Users retrieved successfully", users));
   }
 
   @Operation(summary = "Get detailed information for a specific user")
   @GetMapping("/{userId}")
-  public ResponseEntity<?> getUserDetails(@PathVariable String userId) {
-    // TODO: Make a secure GET request to the Authentication Service for a single user's details.
-    return ResponseEntity.ok().build();
+  public ResponseEntity<ApiResponse> getUserDetails(@PathVariable String userId) {
+    Object user = adminUserService.getUserDetails(userId);
+    return ResponseEntity.ok(ApiResponse.success("User details retrieved successfully", user));
   }
 
   @Operation(summary = "Update a user's role or status")
   @PutMapping("/{userId}")
-  public ResponseEntity<?> updateUser(@PathVariable String userId /*, @RequestBody UserUpdateDto dto */) {
-    // TODO: Make a secure PUT request to the Authentication Service to update the user.
-    return ResponseEntity.ok().build();
+  public ResponseEntity<ApiResponse> updateUser(
+          @PathVariable String userId,
+          @Valid @RequestBody UserUpdateDto dto) {
+    Object updatedUser = adminUserService.updateUser(userId, dto);
+    return ResponseEntity.ok(ApiResponse.success("User updated successfully", updatedUser));
   }
 
   @Operation(summary = "Deactivate a user account")
   @DeleteMapping("/{userId}")
-  public ResponseEntity<?> deactivateUser(@PathVariable String userId) {
-    // TODO: Make a secure DELETE request to the Authentication Service to deactivate the user.
-    return ResponseEntity.ok().build();
+  public ResponseEntity<ApiResponse> deactivateUser(@PathVariable String userId) {
+    adminUserService.deactivateUser(userId);
+    return ResponseEntity.ok(ApiResponse.success("User deactivated successfully", null));
   }
 }

@@ -57,6 +57,15 @@ public class AdminUserServiceImpl implements AdminUserService {
           .collectList()
           .block();
 
+      // Convert id to userId and ensure userId is set
+      if (users != null) {
+        users.forEach(user -> {
+          if (user.getUserId() == null && user.getId() != null) {
+            user.setUserId(String.valueOf(user.getId()));
+          }
+        });
+      }
+
       return users != null ? users : Collections.emptyList();
     } catch (Exception e) {
       log.error("Error fetching users from auth service", e);
@@ -77,6 +86,12 @@ public class AdminUserServiceImpl implements AdminUserService {
       if (user == null) {
         throw new RuntimeException("User not found: " + userId);
       }
+      
+      // Convert id to userId if needed
+      if (user.getUserId() == null && user.getId() != null) {
+        user.setUserId(String.valueOf(user.getId()));
+      }
+      
       return user;
     } catch (Exception e) {
       log.error("Error fetching user: {}", userId, e);

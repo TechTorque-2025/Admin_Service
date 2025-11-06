@@ -22,17 +22,24 @@ import java.util.Map;
 @Builder
 public class UserResponse {
     private String userId;
+    private Long id; // Auth service returns Long id
     private String username;
     private String fullName;
     private String email;
     private String phone;
     private String address;
-    private String role;
+    private String role; // Single role for backward compatibility
+    private List<String> roles; // Multiple roles from auth service
     private Boolean active;
+    private Boolean enabled; // Auth service field
+    private Boolean accountLocked;
+    private Boolean emailVerified;
     private String department;
     private String profilePhoto;
     private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
     private LocalDateTime lastLogin;
+    private LocalDateTime lastLoginAt; // Auth service field
 
     // Activity statistics (for detailed view)
     private UserActivity activity;

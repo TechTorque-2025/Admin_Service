@@ -24,6 +24,8 @@ public class UpdateUserRequest {
     @Pattern(regexp = "ADMIN|EMPLOYEE|CUSTOMER", message = "Role must be ADMIN, EMPLOYEE, or CUSTOMER")
     private String role;
 
+    private List<String> roles;
+
     private Boolean active;
 
     @Size(max = 20, message = "Maximum 20 permissions allowed")

@@ -217,10 +217,11 @@ public class AdminUserServiceImpl implements AdminUserService {
       }
       
       // Handle other updates (active status, department, etc.)
-      if (request.getActive() != null || request.getDepartment() != null) {
+      Boolean activationStatus = request.getActivationStatus();
+      if (activationStatus != null || request.getDepartment() != null) {
         java.util.Map<String, Object> updateRequest = new java.util.HashMap<>();
-        if (request.getActive() != null) {
-          updateRequest.put("enabled", request.getActive());
+        if (activationStatus != null) {
+          updateRequest.put("enabled", activationStatus);
         }
         
         if (updateRequest.size() > 0) {

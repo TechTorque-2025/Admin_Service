@@ -75,23 +75,21 @@ public class AdminUserServiceImpl implements AdminUserService {
 
   @Override
   public UserResponse getUserById(String userId) {
-    log.info("Fetching user: {} from auth service", userId);
+    log.info("Fetching user by ID: {} from auth service", userId);
     try {
-      UserResponse user = authServiceWebClient.get()
-          .uri("/users/" + userId)
-          .retrieve()
-          .bodyToMono(UserResponse.class)
-          .block();
-
-      if (user == null) {
-        throw new RuntimeException("User not found: " + userId);
-      }
+      // Auth service endpoints use username, not userId
+      // We need to first get all users and find the one with matching ID
+      List<UserResponse> allUsers = getAllUsers(null, null, 0, 1000);
       
-      // Convert id to userId if needed
-      if (user.getUserId() == null && user.getId() != null) {
-        user.setUserId(String.valueOf(user.getId()));
-      }
+      UserResponse user = allUsers.stream()
+          .filter(u -> {
+            String userIdStr = u.getUserId() != null ? u.getUserId() : String.valueOf(u.getId());
+            return userIdStr.equals(userId);
+          })
+          .findFirst()
+          .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
       
+      log.info("Found user: {} with username: {}", userId, user.getUsername());
       return user;
     } catch (Exception e) {
       log.error("Error fetching user: {}", userId, e);
@@ -139,14 +137,105 @@ public class AdminUserServiceImpl implements AdminUserService {
   public UserResponse updateUser(String userId, UpdateUserRequest request) {
     log.info("Updating user: {} via auth service", userId);
     try {
-      UserResponse response = authServiceWebClient.put()
-          .uri("/users/" + userId)
-          .bodyValue(request)
-          .retrieve()
-          .bodyToMono(UserResponse.class)
-          .block();
-
-      return response;
+      // First, get the current user details to obtain the username
+      UserResponse currentUser = getUserById(userId);
+      String username = currentUser.getUsername();
+      
+      // Handle role updates separately via the roles endpoint
+      if (request.getRoles() != null || request.getRole() != null) {
+        // Get current roles
+        List<String> currentRoles = currentUser.getRoles() != null ? currentUser.getRoles() : new java.util.ArrayList<>();
+        List<String> newRoles = new java.util.ArrayList<>();
+        
+        // Build the new role list - prioritize roles array over single role
+        if (request.getRoles() != null && !request.getRoles().isEmpty()) {
+          newRoles.addAll(request.getRoles());
+        } else if (request.getRole() != null) {
+          newRoles.add(request.getRole());
+        }
+        
+        // Always preserve CUSTOMER role if it exists
+        if (currentRoles.contains("CUSTOMER")) {
+          if (!newRoles.contains("CUSTOMER")) {
+            newRoles.add("CUSTOMER");
+          }
+        }
+        
+        // Always preserve SUPER_ADMIN role if it exists (cannot be removed via this endpoint)
+        if (currentRoles.contains("SUPER_ADMIN")) {
+          if (!newRoles.contains("SUPER_ADMIN")) {
+            newRoles.add("SUPER_ADMIN");
+          }
+        }
+        
+        // Determine which roles to add and which to remove
+        List<String> rolesToAdd = new java.util.ArrayList<>();
+        List<String> rolesToRemove = new java.util.ArrayList<>();
+        
+        // Find roles to add
+        for (String role : newRoles) {
+          if (!currentRoles.contains(role)) {
+            rolesToAdd.add(role);
+          }
+        }
+        
+        // Find roles to remove (only remove EMPLOYEE and ADMIN, never CUSTOMER or SUPER_ADMIN)
+        for (String role : currentRoles) {
+          if (!newRoles.contains(role) && (role.equals("EMPLOYEE") || role.equals("ADMIN"))) {
+            rolesToRemove.add(role);
+          }
+        }
+        
+        // Apply role changes
+        for (String roleToAdd : rolesToAdd) {
+          log.info("Assigning role {} to user {}", roleToAdd, username);
+          java.util.Map<String, Object> roleRequest = new java.util.HashMap<>();
+          roleRequest.put("roleName", roleToAdd);
+          roleRequest.put("action", "ASSIGN");
+          
+          authServiceWebClient.post()
+              .uri("/users/" + username + "/roles")
+              .bodyValue(roleRequest)
+              .retrieve()
+              .bodyToMono(Void.class)
+              .block();
+        }
+        
+        for (String roleToRemove : rolesToRemove) {
+          log.info("Revoking role {} from user {}", roleToRemove, username);
+          java.util.Map<String, Object> roleRequest = new java.util.HashMap<>();
+          roleRequest.put("roleName", roleToRemove);
+          roleRequest.put("action", "REVOKE");
+          
+          authServiceWebClient.post()
+              .uri("/users/" + username + "/roles")
+              .bodyValue(roleRequest)
+              .retrieve()
+              .bodyToMono(Void.class)
+              .block();
+        }
+      }
+      
+      // Handle other updates (active status, department, etc.)
+      Boolean activationStatus = request.getActivationStatus();
+      if (activationStatus != null || request.getDepartment() != null) {
+        java.util.Map<String, Object> updateRequest = new java.util.HashMap<>();
+        if (activationStatus != null) {
+          updateRequest.put("enabled", activationStatus);
+        }
+        
+        if (updateRequest.size() > 0) {
+          authServiceWebClient.put()
+              .uri("/users/" + username)
+              .bodyValue(updateRequest)
+              .retrieve()
+              .bodyToMono(Void.class)
+              .block();
+        }
+      }
+      
+      // Return the updated user
+      return getUserById(userId);
     } catch (Exception e) {
       log.error("Error updating user: {}", userId, e);
       throw new RuntimeException("Failed to update user: " + e.getMessage());

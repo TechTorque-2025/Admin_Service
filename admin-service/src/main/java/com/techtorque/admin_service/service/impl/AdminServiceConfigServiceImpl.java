@@ -121,9 +121,8 @@ public class AdminServiceConfigServiceImpl implements AdminServiceConfigService 
     ServiceType serviceType = serviceTypeRepository.findById(id)
             .orElseThrow(() -> new IllegalArgumentException("Service type not found: " + id));
 
-    // Soft delete
-    serviceType.setActive(false);
-    serviceTypeRepository.save(serviceType);
+    // Hard delete - actually remove from database
+    serviceTypeRepository.delete(serviceType);
 
     log.info("Service type deleted successfully: {}", id);
   }

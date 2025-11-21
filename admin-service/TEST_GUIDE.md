@@ -2,7 +2,7 @@
 
 ## Test Summary
 
-**Total Tests: 85**
+**Total Tests: 91**
 **Status: ✅ All Passing (100%)**
 
 ## Running Tests
@@ -48,21 +48,25 @@ mvn test -Dtest=ServiceTypeRepositoryTest
 - `AdminUserServiceTest` - 5 tests ⭐ NEW
 - `AnalyticsServiceTest` - 3 tests ⭐ NEW
 
-### Controller Layer (16 tests)
+### Controller Layer (19 tests)
 - `AdminServiceConfigControllerIntegrationTest` - 4 tests
 - `AuditLogControllerIntegrationTest` - 2 tests
 - `SystemConfigurationControllerIntegrationTest` - 4 tests
 - `AdminReportControllerIntegrationTest` - 3 tests ⭐ NEW
 - `AdminUserControllerIntegrationTest` - 3 tests ⭐ NEW
+- `AdminAnalyticsControllerIntegrationTest` - 3 tests ⭐ NEW
 
 ### Integration Tests (6 tests)
 - `ServiceTypeIntegrationTest` - 3 tests
 - `SystemConfigurationIntegrationTest` - 3 tests
 
+### Public API Tests (3 tests)
+- `PublicServiceTypeControllerIntegrationTest` - 3 tests ⭐ NEW
+
 ### Application Test (1 test)
 - `AdminServiceApplicationTests` - 1 test
 
-**Total: 85 tests covering 100% of critical components**
+**Total: 91 tests covering 100% of critical components**
 
 ## Test Configuration
 

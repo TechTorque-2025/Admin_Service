@@ -74,7 +74,7 @@ class AdminAnalyticsControllerIntegrationTest {
     void testGetSystemMetrics_Success() throws Exception {
         when(analyticsService.getSystemMetrics()).thenReturn(systemMetrics);
 
-        mockMvc.perform(get("/admin/analytics/system-metrics"))
+        mockMvc.perform(get("/admin/analytics/metrics"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
 

@@ -45,14 +45,33 @@ public class WebClientConfig {
             if (attributes != null) {
                 HttpServletRequest request = attributes.getRequest();
                 String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
+                
+                // Propagate Authorization header
+                org.springframework.web.reactive.function.client.ClientRequest.Builder requestBuilder = org.springframework.web.reactive.function.client.ClientRequest.from(clientRequest);
+                
                 if (authHeader != null && authHeader.startsWith("Bearer ")) {
-                    return Mono.just(
-                        org.springframework.web.reactive.function.client.ClientRequest
-                            .from(clientRequest)
-                            .header(HttpHeaders.AUTHORIZATION, authHeader)
-                            .build()
-                    );
+                    requestBuilder.header(HttpHeaders.AUTHORIZATION, authHeader);
+                    
+                    // Also parse JWT to get claims and set X-User headers for services that rely on GatewayHeaderFilter
+                    try {
+                        String token = authHeader.substring(7);
+                        // We can't easily parse JWT here without duplicating logic or dependencies.
+                        // However, since we are already authenticated in this service, we can get details from SecurityContext
+                        org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+                        if (auth != null) {
+                            requestBuilder.header("X-User-Subject", auth.getName());
+                            
+                            String roles = auth.getAuthorities().stream()
+                                .map(a -> a.getAuthority().replace("ROLE_", ""))
+                                .collect(java.util.stream.Collectors.joining(","));
+                            requestBuilder.header("X-User-Roles", roles);
+                        }
+                    } catch (Exception e) {
+                        // Ignore parsing errors, just don't set extra headers
+                    }
                 }
+                
+                return Mono.just(requestBuilder.build());
             }
             return Mono.just(clientRequest);
         });

@@ -7,6 +7,10 @@ import java.util.List;
 
 public interface AdminReportService {
     ReportResponse generateReport(GenerateReportRequest request, String generatedBy);
+
     List<ReportResponse> getAllReports(int page, int limit);
+
     ReportResponse getReportById(String reportId);
+
+    byte[] downloadReport(String reportId);
 }
